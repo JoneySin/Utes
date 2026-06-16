@@ -199,7 +199,7 @@ async def actor_profile_display(req):
 
     gallery_grid_html = ""
     if role == 'admin':
-        # ✅ FIX: मल्टीपल इमेज अपलोड करने के लिए input में 'multiple' एट्रिब्यूट जोड़ा गया
+        # ✅ MULTIPLE SELECTION UPGRADE: input में multiple जोड़ा गया
         gallery_grid_html += f'''
         <div style="background:var(--card); border:1px dashed var(--border); padding:20px; border-radius:8px; text-align:center; margin-bottom:20px;">
             <form id="galleryForm" action="/api/actor/gallery_upload" method="post" enctype="multipart/form-data" style="margin:0;">
@@ -216,7 +216,7 @@ async def actor_profile_display(req):
     else:
         gallery_grid_html += '<div class="gallery-grid">'
         for i in range(len(gallery_list)):
-            # ✅ FIX: एडमिन के लिए हर गैलरी फोटो के ऊपर डिलीट का बटन जोड़ा गया
+            # ✅ INDIVIDUAL DELETE UPGRADE: एडमिन के लिए गैलरी इमेज डिलीट बटन
             admin_img_actions = f'<button class="gal-del-btn" onclick="deleteGalleryImg(\'{actor_id}\', {i})">&#128465;</button>' if role == 'admin' else ""
             gallery_grid_html += f'''
             <div class="gallery-item-wrapper">
@@ -247,7 +247,7 @@ async def actor_profile_display(req):
         .actor-panel {{ display: none; }}
         .actor-panel.active {{ display: block !important; }}
         
-        /* 📸 प्रोफाइल फोटो साइज अपग्रेड (Aspect Ratio 1:1 Square & Fill Container Width) */
+        /* 📸 PROFILE PHOTO SIZE UPGRADE (Aspect Ratio 1:1 Square & Zero Side Blank Space) */
         .actor-hero-box {{ display:flex; gap:25px; background:var(--card); border:1px solid var(--border); padding:25px; border-radius:12px; margin-bottom:35px; flex-wrap:wrap; }}
         .profile-img-wrap {{ width:240px; height:240px; background:var(--bg3); border-radius:12px; overflow:hidden; border:1px solid var(--border); flex-shrink:0; position:relative; }}
         .profile-img-wrap img {{ width:100%; height:100%; object-fit:cover; }}
@@ -258,7 +258,6 @@ async def actor_profile_display(req):
         .gallery-item {{ width: 100%; height: 100%; object-fit: cover; transition: transform 0.2s; }}
         .gallery-item-wrapper:hover .gallery-item {{ transform: scale(1.03); }}
         
-        /* 🗑️ गैलरी फोटो डिलीट बटन स्टाइल */
         .gal-del-btn {{ position: absolute; top: 8px; right: 8px; background: rgba(0,0,0,0.7); border: 1px solid rgba(255,255,255,0.2); color: #fff; width: 32px; height: 32px; border-radius: 6px; display: flex; align-items: center; justify-content: center; cursor: pointer; transition: 0.2s; z-index: 5; }}
         .gal-del-btn:hover {{ background: #e50914; border-color: #e50914; }}
 
@@ -266,7 +265,7 @@ async def actor_profile_display(req):
         .edit-modal.open {{ display: flex !important; }}
         .em-card {{ background: var(--card); border: 1px solid var(--border); border-radius: 12px; padding: 25px; width: 100%; max-width: 480px; box-shadow: 0 10px 30px rgba(0,0,0,.5); position: relative; margin: auto; }}
         
-        /* 🚨 लोडिंग वेब नोटिफिकेशन ओवरले */
+        /* 🚨 NOTIFICATION LOADING OVERLAY */
         .upload-overlay {{ position: fixed; inset:0; background: rgba(0,0,0,0.85); z-index: 9999; display: none; flex-direction: column; align-items: center; justify-content: center; color: #fff; }}
         .upload-overlay.show {{ display: flex !important; }}
         .progress-box {{ width: 80%; max-width: 300px; height: 6px; background: var(--bg4); border-radius: 3px; overflow: hidden; margin-top: 15px; }}
@@ -344,7 +343,6 @@ async def actor_profile_display(req):
         <div class="em-card">
             <button class="em-close" onclick="closeActorEditModal()" style="position:absolute; top:15px; right:20px; background:none; border:none; color:var(--muted); font-size:24px; cursor:pointer;">&#10005;</button>
             <div class="em-title" style="font-size:18px; font-weight:700; margin-bottom:20px; color:var(--text);">✏️ Edit Actor Profile Matrix</div>
-            
             <form id="actorUpdateForm" onsubmit="submitActorProfileForm(event)">
                 <input type="hidden" name="actor_id" value="{actor_id}">
                 
@@ -397,7 +395,6 @@ async def actor_profile_display(req):
             localStorage.setItem('actor_active_tab', tabId);
         }}
 
-        // पेज रीलोड पर उसी टैब पर वापस लैंड करने के लिए परसिस्टेंस चेक
         document.addEventListener("DOMContentLoaded", function() {{
             var savedTab = localStorage.getItem('actor_active_tab');
             if(savedTab && document.getElementById(savedTab)) {{
@@ -410,7 +407,7 @@ async def actor_profile_display(req):
         function closeActorEditModal() {{ document.getElementById('actorEditModal').classList.remove('open'); }}
         function resetActorSearchPage() {{ actCurPage = 1; actOffset = 0; }}
 
-        // ✅ MULTI-IMAGE UPLOAD ENGINE WITH DYNAMIC WEB NOTIFICATION PROGRESS BAR
+        // ✅ MULTI-UPLOAD PROGRESS NOTIFICATION PIPELINE
         async function submitGalleryForm() {{
             var form = document.getElementById('galleryForm');
             var input = form.querySelector('input[type="file"]');
@@ -425,12 +422,10 @@ async def actor_profile_display(req):
             pBar.style.width = "10%";
 
             var formData = new FormData(form);
-            // multiple files अपेंड करें
             formData.delete('gallery_img');
             for (var i = 0; i < input.files.length; i++) {{
                 formData.append('gallery_img', input.files[i]);
             }}
-
             pBar.style.width = "40%";
 
             try {{
@@ -454,7 +449,7 @@ async def actor_profile_display(req):
             }}
         }}
 
-        // ✅ ASYNC PROFILE EDIT + UPDATE PHOTO PIPELINE WITH NOTIFICATION GATEWAY
+        // ✅ PROFILE FORM EDIT WITH NOTIFICATION LOGIC
         async function submitActorProfileForm(event) {{
             event.preventDefault();
             var form = document.getElementById('actorUpdateForm');
@@ -465,10 +460,10 @@ async def actor_profile_display(req):
             closeActorEditModal();
             overlay.classList.add('show');
             oText.innerText = "मेटाडाटा और प्रोफाइल फोटो सिंक हो रही है, थोड़ा वेट करें...";
-            pBar.style.width = "25%";
+            pBar.style.width = "30%";
 
             var formData = new FormData(form);
-            pBar.style.width = "60%";
+            pBar.style.width = "65%";
 
             try {{
                 var res = await fetch('/api/actor/update_profile', {{ method: 'POST', body: formData }});
@@ -481,7 +476,7 @@ async def actor_profile_display(req):
                         window.location.reload();
                     }}, 1000);
                 }} else {{
-                    alert("Profile update packet failed.");
+                    alert("Profile update failed.");
                     overlay.classList.remove('show');
                 }}
             }} catch(e) {{
@@ -490,7 +485,7 @@ async def actor_profile_display(req):
             }}
         }}
 
-        // ✅ ASYNC DELETE ACTOR PROFILE MASTER METHOD
+        // ✅ PURGE WHOLE PROFILE AJAX
         async function deleteActorProfileMaster(actorId) {{
             if(!confirm("⚠️ क्या आप सचमुच इस एक्टर की पूरी प्रोफाइल और गैलरी डेटाबेस से हमेशा के लिए डिलीट करना चाहते हैं?")) return;
             try {{
@@ -503,7 +498,7 @@ async def actor_profile_display(req):
             }} catch(e) {{ alert("Database response error."); }}
         }}
 
-        // ✅ ASYNC DELETE GALLERY PORTRAIT ELEMENT
+        // ✅ PURGE SINGLE GALLERY IMAGE AJAX
         async function deleteGalleryImg(actorId, idx) {{
             if(!confirm("क्या आप इस तस्वीर को गैलरी से हटाना चाहते हैं?")) return;
             try {{
@@ -661,7 +656,7 @@ async def api_actor_update_profile(req):
             "social_links": {"instagram": insta, "youtube": yt, "twitter": twitter, "other": other}
         }
         
-        # ✅ FIX: अगर नई प्रोफाइल फोटो अपलोड की गई है, तो टेलीग्राम पर सेंड करके Mongo अपडेट करो
+        # ✅ PROFILE PHOTO UPDATE TRIGGER: नई प्रोफाइल फोटो अपलोड को प्रोसेस करें
         if change_photo_bytes and len(change_photo_bytes) > 10:
             with io.BytesIO(change_photo_bytes) as img_buffer:
                 img_buffer.name = f"avatar_{actor_id}.jpg"
@@ -695,7 +690,6 @@ async def api_actor_gallery_upload(req):
             if part.name == 'actor_id':
                 actor_id = (await part.read()).decode().strip()
             elif part.name == 'gallery_img':
-                # मल्टीपल इमेजेस को बैक-टू-बैक बाइनरी रीड करना
                 img_bytes = await part.read()
                 if img_bytes and len(img_bytes) > 10:
                     with io.BytesIO(img_bytes) as img_buffer:
@@ -706,9 +700,9 @@ async def api_actor_gallery_upload(req):
                         uploaded_tg_ids.append(f"TG_ID:{tg_id}")
             
         if not actor_id or not uploaded_tg_ids:
-            return web.json_response({"error": "No valid data or assets packet uploaded"}, status=400)
+            return web.json_response({"error": "No assets packet uploaded"}, status=400)
         
-        # $each का उपयोग करके मल्टीपल टेलीग्राम फोटो IDs को एक साथ डेटाबेस एरे में पुश करना
+        # $each का इस्तेमाल करके मल्टीपल फोटो एरे को एक साथ मोंगो डेटाबेस में पुश करना
         await actors.update_one(
             {"_id": ObjectId(actor_id)}, 
             {"$push": {"gallery": {"$each": uploaded_tg_ids}}}

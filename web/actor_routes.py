@@ -218,10 +218,10 @@ async def actor_profile_display(req):
         gallery_grid_html += '</div>'
 
     admin_edit_btn = f'<button onclick="openActorEditModal()" style="background:var(--bg4); border:1px solid var(--border); color:var(--text); padding:8px 16px; border-radius:6px; font-size:12px; font-weight:700; cursor:pointer; margin-top:10px; align-self:flex-start;">✏️ Edit Profile & Socials</button>' if role == 'admin' else ""
+    
     tags_json_payload = html.escape(json.dumps(tags_list))
     safe_bio = html.escape(actor.get("bio", ""))
 
-    # ✅ फिक्स: क्लॉड एआई के सिंटैक्स रूल्स और सीएसएस का टकराव पूरी तरह ठीक किया गया
     tab_engine_ui = f'''
     <style>
         .actor-tab-bar {{ display: flex; gap: 10px; border-bottom: 2px solid var(--border); margin-bottom: 25px; }}
@@ -349,7 +349,6 @@ async def actor_profile_display(req):
         function closeActorEditModal() {{ document.getElementById('actorEditModal').classList.remove('open'); }}
         function resetActorSearchPage() {{ actCurPage = 1; actOffset = 0; }}
 
-        // ✅ फिक्स: AJAX कॉल अब सही एंडपॉइंट '/api/actor/search' पर टैग्स और थंबनेल बैजेस के साथ फ़िल्टर लोड करेगा
         async function triggerActorSearchAjax() {{
             var q = document.getElementById('actor_movie_q').value.trim();
             var col = document.getElementById('actor_col_sel').value;
@@ -377,7 +376,7 @@ async def actor_profile_display(req):
                     }} else {{
                         posterHtml = '<div class="fc-text-info"><span class="tc-type">'+f.type.toUpperCase()+'</span><span class="tc-size">'+f.size+'</span><span class="source-pill '+sc+'" style="margin-left:auto"><span class="source-dot"></span>'+sc.toUpperCase()+'</span></div>';
                     }}
-                    h += '<div class="file-card">' + posterHtml + '<div class="fc-body"><div class="fc-name" onclick="window.open(\''+f.watch+'\',\'_blank\')">'+f.name+'</div></div></div>';
+                    h += '<div class="file-card">' + posterHtml + '<div class="fc-body"><div class="fc-name" onclick="window.open(\\''+f.watch+'\\',\\'_blank\\')">'+f.name+'</div></div></div>';
                 }});
                 grid.innerHTML = h;
                 actNextOffset = d.next_offset;

@@ -81,10 +81,17 @@ async def get_auth(req):
         return 'user', tg_id
     return None, None
 
+# ─────────────────────────────────────────────────────────
+# 🚀 BUILD PAGE WITH ADMIN ACTOR MANAGER INTEGRATION
+# ─────────────────────────────────────────────────────────
 def build_page(title, body, cls="", active_tab="", role=None):
-    if role == 'admin': nav_links = f'<a href="/dashboard" class="sb-link {"active" if active_tab=="dash" else ""}">Home</a><a href="/stats" class="sb-link {"active" if active_tab=="stats" else ""}">Database Stats</a><a href="/profile" class="sb-link {"active" if active_tab=="profile" else ""}">Profile Settings</a>'
-    elif role == 'user': nav_links = f'<a href="/dashboard" class="sb-link {"active" if active_tab=="dash" else ""}">Home</a><a href="/profile" class="sb-link {"active" if active_tab=="profile" else ""}">Profile Settings</a>'
-    else: nav_links = ""
+    # ✅ फ़िक्स: केवल एडमिन लॉगिन होने पर साइडबार मेनू में "➕ Add New Actor" बटन दिखाई देगा
+    if role == 'admin': 
+        nav_links = f'<a href="/dashboard" class="sb-link {"active" if active_tab=="dash" else ""}">Home</a><a href="/admin/create_actor" class="sb-link {"active" if active_tab=="actors" else ""}">➕ Add New Actor</a><a href="/stats" class="sb-link {"active" if active_tab=="stats" else ""}">Database Stats</a><a href="/profile" class="sb-link {"active" if active_tab=="profile" else ""}">Profile Settings</a>'
+    elif role == 'user': 
+        nav_links = f'<a href="/dashboard" class="sb-link {"active" if active_tab=="dash" else ""}">Home</a><a href="/profile" class="sb-link {"active" if active_tab=="profile" else ""}">Profile Settings</a>'
+    else: 
+        nav_links = ""
 
     if role: nav = f'<div class="sidebar-overlay" id="sbOverlay" onclick="closeSidebar()"></div><div class="sidebar" id="sidebar"><div class="sb-header"><div class="sb-logo"><span class="nf-icon">F</span> FAST FINDER</div><button class="sb-close" onclick="closeSidebar()">&#10005;</button></div><nav class="sb-nav"><div class="sb-section">Menu</div>{nav_links}</nav><div class="sb-footer"><a href="/logout" class="sb-logout">Sign Out</a></div></div><div class="topbar"><button class="ham-btn" id="hamBtn" onclick="openSidebar()"><span class="ham-line"></span><span class="ham-line"></span><span class="ham-line"></span></button><a class="logo" href="/dashboard"><span class="nf-icon">F</span> FAST FINDER</a><div class="topbar-right"><button class="theme-btn" onclick="toggleThemeFixed()">Theme</button></div></div>'
     else: nav = '<div class="topbar" style="position:absolute; width:100%; box-shadow:none; background:transparent;"><a class="logo" href="/" style="font-size:24px"><span class="nf-icon" style="font-size:24px">F</span> FAST FINDER</a><div class="topbar-right"><button class="theme-btn" onclick="toggleThemeFixed()">Theme</button></div></div>'

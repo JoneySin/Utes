@@ -48,8 +48,15 @@ async def actors_directory_page(req):
         .pg-btn:disabled {{ opacity:0.4; cursor:not-allowed; }}
         .pg-info {{ color:var(--text); font-weight:800; font-size:14px; background:var(--bg3); padding:6px 14px; border-radius:6px; border:1px solid var(--border); }}
         
-        .act-card {{ background:var(--card); border:1px solid var(--border); border-radius:10px; overflow:hidden; transition:transform 0.2s, border-color 0.2s; cursor:pointer; box-shadow:0 4px 10px rgba(0,0,0,0.2); }}
-        .act-card:hover {{ transform:translateY(-4px); border-color:rgba(229,9,20,0.5); }}
+        /* 🔥 NEW ANIMATION CSS ADDED HERE 🔥 */
+        .act-card {{ background:var(--card); border:1px solid var(--border); border-radius:10px; overflow:hidden; transition:transform 0.2s, border-color 0.2s, box-shadow 0.2s; cursor:pointer; box-shadow:0 4px 10px rgba(0,0,0,0.2); }}
+        .act-card:hover {{ transform:translateY(-6px); border-color:rgba(229,9,20,0.6); box-shadow:0 8px 22px rgba(229,9,20,0.25); }}
+        .act-card:active {{ transform:scale(0.95); transition:transform 0.1s; }}
+        
+        .act-poster {{ position:absolute; inset:0; width:100%; height:100%; object-fit:cover; transition:transform 0.4s cubic-bezier(0.4, 0, 0.2, 1); }}
+        .act-card:hover .act-poster {{ transform:scale(1.1); }}
+        
+        .act-text-card:active {{ transform:scale(0.97); transition:transform 0.1s; }}
     </style>
 
     <div class="search-box">
@@ -83,7 +90,9 @@ async def actors_directory_page(req):
     for a in all_actors:
         cat = a.get("category", "actor")
         i = "🎭" if cat == "actor" else "📱" if cat == "app" else "🌐"
-        act_items += f'<div class="act-card" onclick="window.location.href=\'/actor/{str(a["_id"])}\'"><div style="position:relative; padding-top:135%; background:var(--bg3); overflow:hidden;"><img src="/api/actor/photo?id={str(a["_id"])}&v={int(a.get("photo_updated_at") or a.get("created_at") or 0)}" style="position:absolute; inset:0; width:100%; height:100%; object-fit:cover;" loading="lazy"><div style="position:absolute; top:8px; left:8px; background:rgba(0,0,0,0.8); border:1px solid rgba(255,255,255,0.1); color:#fff; font-size:9px; padding:4px 8px; border-radius:4px; font-weight:800; backdrop-filter:blur(4px);">{i} {cat.capitalize()}</div></div><div style="padding:10px; text-align:center;"><div style="font-size:13px; font-weight:800; color:var(--text); text-overflow:ellipsis; overflow:hidden; white-space:nowrap;">{html.escape(a.get("name", ""))}</div></div></div>'
+        v = int(a.get("photo_updated_at") or a.get("created_at") or 0)
+        # ✅ Inline style removed from img and act-poster class added
+        act_items += f'<div class="act-card" onclick="window.location.href=\'/actor/{str(a["_id"])}\'"><div style="position:relative; padding-top:135%; background:var(--bg3); overflow:hidden;"><img src="/api/actor/photo?id={str(a["_id"])}&v={v}" class="act-poster" loading="lazy"><div style="position:absolute; top:8px; left:8px; background:rgba(0,0,0,0.8); border:1px solid rgba(255,255,255,0.1); color:#fff; font-size:9px; padding:4px 8px; border-radius:4px; font-weight:800; backdrop-filter:blur(4px); z-index:2;">{i} {cat.capitalize()}</div></div><div style="padding:10px; text-align:center;"><div style="font-size:13px; font-weight:800; color:var(--text); text-overflow:ellipsis; overflow:hidden; white-space:nowrap;">{html.escape(a.get("name", ""))}</div></div></div>'
     
     initial_grid = f'<div id="dir_grid_container" class="dir-grid">{act_items}</div>' if all_actors else '<div id="dir_grid_container" style="color:var(--muted); text-align:center; padding:60px 20px;">📇 No profiles found.</div>'
     
@@ -101,7 +110,6 @@ async def actors_directory_page(req):
     var hasNext = {has_nxt_str};
     var currentCat = 'all'; var currentMode = 'poster';
     
-    // ✅ State Tracker: खाली या डुप्लीकेट सर्च को रोकने के लिए
     var lastQ = "", lastCat = "all", lastMode = "poster", lastOffset = 0;
     
     document.addEventListener("DOMContentLoaded", () => {{ updatePgUI(); }});
@@ -123,10 +131,7 @@ async def actors_directory_page(req):
     async function searchDirectory() {{
         var q = document.getElementById('dir_q').value.trim();
         
-        // ✅ FIX: अगर कुछ बदला नहीं है (या बिना कुछ लिखे बटन दबा दिया), तो कुछ मत करो!
-        if (q === lastQ && currentCat === lastCat && currentMode === lastMode && dirOffset === lastOffset) {{
-            return; 
-        }}
+        if (q === lastQ && currentCat === lastCat && currentMode === lastMode && dirOffset === lastOffset) {{ return; }}
         
         lastQ = q; lastCat = currentCat; lastMode = currentMode; lastOffset = dirOffset;
         var grid = document.getElementById('dir_grid_container');
@@ -185,7 +190,6 @@ async def api_directory_search(req):
     if cat != "all": query["category"] = cat
     if q: 
         safe_q = re.escape(q)
-        # ✅ FIX: अब केवल "name" के आधार पर सर्च होगा (Tags को हटा दिया गया है)
         query["name"] = {"$regex": safe_q, "$options": "i"}
         
     try:
@@ -204,13 +208,14 @@ async def api_directory_search(req):
         for a in docs:
             c = a.get("category", "actor")
             i = "🎭" if c == "actor" else "📱" if c == "app" else "🌐"
-            html_out += f'''<div style="background:var(--card); border:1px solid var(--border); padding:15px; border-radius:8px; display:flex; justify-content:space-between; align-items:center; cursor:pointer; transition:0.2s;" onclick="window.location.href=\'/actor/{str(a["_id"])}\'" onmouseover="this.style.borderColor='var(--accent)'" onmouseout="this.style.borderColor='var(--border)'"><div style="font-weight:800; color:var(--text); font-size:14px; white-space:nowrap; overflow:hidden; text-overflow:ellipsis; max-width:65%;">{html.escape(a.get("name",""))}</div><div style="background:var(--bg3); padding:4px 10px; border-radius:6px; font-size:11px; font-weight:800; color:var(--muted); white-space:nowrap; border:1px solid var(--border);">{i} {c.capitalize()}</div></div>'''
+            html_out += f'''<div class="act-text-card" style="background:var(--card); border:1px solid var(--border); padding:15px; border-radius:8px; display:flex; justify-content:space-between; align-items:center; cursor:pointer; transition:0.2s;" onclick="window.location.href=\'/actor/{str(a["_id"])}\'" onmouseover="this.style.borderColor='var(--accent)'" onmouseout="this.style.borderColor='var(--border)'"><div style="font-weight:800; color:var(--text); font-size:14px; white-space:nowrap; overflow:hidden; text-overflow:ellipsis; max-width:65%;">{html.escape(a.get("name",""))}</div><div style="background:var(--bg3); padding:4px 10px; border-radius:6px; font-size:11px; font-weight:800; color:var(--muted); white-space:nowrap; border:1px solid var(--border);">{i} {c.capitalize()}</div></div>'''
     else:
         for a in docs:
             c = a.get("category", "actor")
             i = "🎭" if c == "actor" else "📱" if c == "app" else "🌐"
             v = int(a.get("photo_updated_at") or a.get("created_at") or 0)
-            html_out += f'''<div class="act-card" onclick="window.location.href=\'/actor/{str(a["_id"])}\'"><div style="position:relative; padding-top:135%; background:var(--bg3); overflow:hidden;"><img src="/api/actor/photo?id={str(a["_id"])}&v={v}" style="position:absolute; inset:0; width:100%; height:100%; object-fit:cover;" loading="lazy"><div style="position:absolute; top:8px; left:8px; background:rgba(0,0,0,0.8); border:1px solid rgba(255,255,255,0.1); color:#fff; font-size:9px; padding:4px 8px; border-radius:4px; font-weight:800; backdrop-filter:blur(4px);">{i} {c.capitalize()}</div></div><div style="padding:10px; text-align:center;"><div style="font-size:13px; font-weight:800; color:var(--text); text-overflow:ellipsis; overflow:hidden; white-space:nowrap;">{html.escape(a.get("name", ""))}</div></div></div>'''
+            # ✅ Inline style removed from img and act-poster class added here too
+            html_out += f'''<div class="act-card" onclick="window.location.href=\'/actor/{str(a["_id"])}\'"><div style="position:relative; padding-top:135%; background:var(--bg3); overflow:hidden;"><img src="/api/actor/photo?id={str(a["_id"])}&v={v}" class="act-poster" loading="lazy"><div style="position:absolute; top:8px; left:8px; background:rgba(0,0,0,0.8); border:1px solid rgba(255,255,255,0.1); color:#fff; font-size:9px; padding:4px 8px; border-radius:4px; font-weight:800; backdrop-filter:blur(4px); z-index:2;">{i} {c.capitalize()}</div></div><div style="padding:10px; text-align:center;"><div style="font-size:13px; font-weight:800; color:var(--text); text-overflow:ellipsis; overflow:hidden; white-space:nowrap;">{html.escape(a.get("name", ""))}</div></div></div>'''
             
     return web.json_response({"html": html_out, "has_next": has_next})
 

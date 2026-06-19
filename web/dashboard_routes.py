@@ -6,7 +6,7 @@ from utils import temp
 dashboard_routes = web.RouteTableDef()
 
 # ─────────────────────────────────────────────────────────────────────────────
-# 🎨 NEW CARD UI CSS — With Smooth Fade-In Placeholder Support
+# 🎨 NEW CARD UI CSS — With Smooth Fade-In & Shimmer Effect
 # ─────────────────────────────────────────────────────────────────────────────
 CARD_CSS = """
 <style>
@@ -68,8 +68,9 @@ CARD_CSS = """
 .file-card{background:var(--card);border-radius:6px;overflow:hidden;border:1px solid var(--border);transition:transform .22s cubic-bezier(.4,0,.2,1),box-shadow .22s,border-color .22s;cursor:pointer}
 .file-card:hover{transform:translateY(-4px);border-color:rgba(229,9,20,.4);box-shadow:0 14px 36px rgba(0,0,0,.6),0 0 0 1px rgba(229,9,20,.2)}
 
-/* ── Poster box ── */
-.poster-box{position:relative;padding-top:56.25%;background:var(--bg3);overflow:hidden}
+/* ── Poster box (With Shimmer Effect) ── */
+.poster-box{position:relative;padding-top:56.25%;background:linear-gradient(90deg, var(--bg3) 0px, var(--bg4) 50%, var(--bg3) 100%);background-size:200% 100%;animation:shimmer 1.5s infinite linear;overflow:hidden}
+@keyframes shimmer{0%{background-position:200% 0}100%{background-position:-200% 0}}
 .fc-poster{position:absolute;inset:0;width:100%;height:100%;object-fit:cover;opacity:0;transition:opacity 0.25s ease-in-out, transform 0.35s ease}
 .fc-poster.loaded{opacity:1}
 .file-card:hover .fc-poster{transform:scale(1.05)}
@@ -130,7 +131,7 @@ CARD_CSS = """
 """
 
 # ─────────────────────────────────────────────────────────────────────────────
-# 🎬 JS ENGINE — Rebuilt Smart Double Pre-fetching Engine Live
+# 🎬 JS ENGINE — Smart Double Pre-fetching Engine Live (Async Decoding Added)
 # ─────────────────────────────────────────────────────────────────────────────
 JS_ENGINE = """
 var curQ='',curOff=0,nextOff='',curCol='all',curPage=1;
@@ -139,7 +140,6 @@ var LIMIT_VAL = __LIMIT_PLACEHOLDER__;
 
 var activeFid = '', activeCol = '', cropperInstance = null;
 
-/* ── Custom dropdown logic ── */
 function closeCdds(){
     document.getElementById('cddColMenu').style.display='none';
     document.getElementById('cddColBtn').classList.remove('open');
@@ -227,6 +227,7 @@ function toggleAdminBtns(card,e){
 document.addEventListener('click',function(){
     document.querySelectorAll('.file-card.admin-active').forEach(function(c){c.classList.remove('admin-active');});
 });
+
 async function doSearch(o){
     var q=document.getElementById('q').value.trim();
     if(!q){showToast('Please enter a movie name','error');return;}
@@ -263,7 +264,7 @@ async function doSearch(o){
             var posterHtml='';
             if(pMode!=='none'){
                 posterHtml='<div class="poster-box" id="poster-box-'+f.file_id+'" onclick="toggleAdminBtns(this.closest(\\'.file-card\\'),event)">'+
-                    '<img src="'+f.tg_thumb+'" id="img-poster-'+f.file_id+'" class="fc-poster" onload="this.classList.add(\\'loaded\\')" onerror="handleThumbError(\\''+f.file_id+'\\')" loading="lazy">'+
+                    '<img src="'+f.tg_thumb+'" id="img-poster-'+f.file_id+'" class="fc-poster" onload="this.classList.add(\\'loaded\\')" onerror="handleThumbError(\\''+f.file_id+'\\')" loading="lazy" decoding="async">'+
                     '<div class="poster-top">'+
                         '<span class="type-chip">'+f.type.toUpperCase()+'</span>'+
                         '<span class="size-chip">'+f.size+'</span>'+
@@ -293,7 +294,6 @@ async function doSearch(o){
                 posterHtml+
                 textInfo+
                 '<div class="fc-body">'+
-                    // ✅ फिक्स: कार्ड टाइटल को एक यूनिक ID दी गई है ताकि लाइव AJAX री-रेंडर हो सके
                     '<div class="fc-name" id="name-title-'+f.file_id+'" onclick="window.open(\\''+f.watch+'\\',\\'_blank\\')">'+f.name+'</div>'+
                 '</div>'+
             '</div>';
@@ -335,12 +335,40 @@ async function deleteFile(fid,col){
     }catch(e){showToast('Delete failed','error');}
 }
 
-function editFile(fid,col,currentName){
-    activeFid=fid;activeCol=col;
+function editFile(fid, col, currentName){
+    activeFid = fid; 
+    activeCol = col;
     if(cropperInstance){cropperInstance.destroy();cropperInstance=null;}
     document.getElementById('emName').value=currentName;
     document.getElementById('emFile').value='';
     document.getElementById('cropContainer').style.display='none';
+
+    // 🌟 MAGIC: एडिट पैनल में नए इनपुट फील्ड्स को ऑटोमैटिकली इंजेक्ट करना
+    var emNameInput = document.getElementById('emName');
+    if(!document.getElementById('emAddCaption')) {
+        var extraHtml = `
+            <div style="margin-top:14px; text-align:left;">
+                <label style="font-size:12px;color:var(--accent);font-weight:700;">➕ Add Search Tags to Caption (Optional)</label>
+                <input type="text" id="emAddCaption" placeholder="e.g. Ajay Devgan, 1080p, Comedy..." style="width:100%;padding:10px;margin-top:6px;border-radius:8px;background:var(--bg3);border:1.5px solid var(--border);color:var(--text);font-family:inherit;box-sizing:border-box;">
+            </div>
+            <div style="margin-top:14px; margin-bottom:12px; text-align:left;">
+                <label style="font-size:12px;color:var(--accent);font-weight:700;">📂 Move File to Collection</label>
+                <select id="emMoveCol" style="width:100%;padding:10px;margin-top:6px;border-radius:8px;background:var(--bg3);border:1.5px solid var(--border);color:var(--text);font-family:inherit;font-weight:600;box-sizing:border-box;">
+                    <option value="primary">🟢 Primary</option>
+                    <option value="cloud">🔵 Cloud</option>
+                    <option value="archive">🟠 Archive</option>
+                </select>
+            </div>
+        `;
+        emNameInput.insertAdjacentHTML('afterend', extraHtml);
+    }
+
+    // करंट कलेक्शन को सिलेक्ट बॉक्स में सेट करें और टैग्स इनपुट खाली करें
+    if(document.getElementById('emMoveCol')) {
+        document.getElementById('emMoveCol').value = col;
+        document.getElementById('emAddCaption').value = ''; 
+    }
+
     var prevBox=document.getElementById('emPreviewBox');
     prevBox.style.display='flex';
     prevBox.innerHTML='<img src="/api/thumb?file_id='+fid+'&col='+activeCol+'" class="t-prev-img" onerror="this.src=\\'https://placehold.co/600x338/181818/FFF?text=No+Thumbnail\\';">';
@@ -375,6 +403,10 @@ function handleLocalPreview(input){
 
 async function saveAllChanges(){
     var newName=document.getElementById('emName').value.trim();
+    // नया: टैग्स और ड्रॉपडाउन की वैल्यू पढ़ें
+    var addCaption=document.getElementById('emAddCaption') ? document.getElementById('emAddCaption').value.trim() : '';
+    var moveCol=document.getElementById('emMoveCol') ? document.getElementById('emMoveCol').value : activeCol;
+
     if(!newName){showToast('File name cannot be empty!','error');return;}
     var btn=document.getElementById('emSaveBtn');
     btn.disabled=true;btn.innerText='Processing pipeline...';
@@ -393,21 +425,33 @@ async function saveAllChanges(){
                 if(!upData.success){showToast(upData.error||'Telegram image sync failed!','error');btn.disabled=false;btn.innerText='Save Changes';return;}
             }
         }
-        showToast('\\ud83d\\udcbe Indexing metadata to Database...');
-        var r=await fetch('/api/edit_name',{method:'POST',body:JSON.stringify({file_id:activeFid,collection:activeCol,new_name:newName}),headers:{'Content-Type':'application/json'}});
+        showToast('\\ud83d\\udcbe Updating DB & Collection...');
+        
+        // नया पेलोड जिसमें टैग्स और कलेक्शन मूवमेंट का डेटा भी है
+        var payload = {
+            file_id: activeFid,
+            collection: activeCol,
+            new_name: newName,
+            add_caption: addCaption,
+            target_collection: moveCol
+        };
+
+        var r=await fetch('/api/edit_name',{method:'POST',body:JSON.stringify(payload),headers:{'Content-Type':'application/json'}});
         var res=await r.json();
+        
         if(res.success||cropperInstance){
-            showToast('\\u2728 Metadata & Studio Poster saved successfully!');
+            showToast('\\u2728 File updated successfully!');
             closeCombinedModal();
             
-            // ✅ फिक्स 1: थंबनेल को तुरंत इसी ब्राउज़र में बिना पुराना कैशे उठाए लाइव रिफ्रेश कराओ
-            reloadThumb(activeFid, activeCol);
-            
-            // ✅ फिक्स 2: पूरे ग्रिड को 'doSearch' से री-रेंडर करने के बजाय सिर्फ इसी कार्ड का नाम लाइव बदलें
-            // इससे पेज री-सर्च नहीं होगा और तुम्हारा कार्ड अपनी जगह से 1 मिलीमीटर भी नहीं हिलेगा!
-            var titleEl = document.getElementById('name-title-' + activeFid);
-            if(titleEl) { titleEl.textContent = newName; }
-            
+            // अगर फाइल किसी दूसरे कलेक्शन में मूव हुई है, तो पूरा ग्रिड रिफ्रेश करें
+            if(activeCol !== moveCol) {
+                doSearch(curOff);
+            } else {
+                // अगर सिर्फ नाम या टैग ऐड हुआ है, तो बिना हिले सिर्फ टेक्स्ट अपडेट करें
+                reloadThumb(activeFid, activeCol);
+                var titleEl = document.getElementById('name-title-' + activeFid);
+                if(titleEl) { titleEl.textContent = newName; }
+            }
         }else{showToast(res.error||'Metadata save failed!','error');}
     }catch(e){showToast('Network synchronization error','error');}
     finally{btn.disabled=false;btn.innerText='Save Changes';}
@@ -469,6 +513,10 @@ SEARCH_ZONE = (
     '<div class="toast" id="toast"></div>'
 )
 
+# ✅ OPTIMIZATION 1: Pre-compile the entire body string ONCE when the app starts.
+# Saves RAM and CPU cycles on every user request.
+DASHBOARD_BODY = CARD_CSS + SEARCH_ZONE + f"<script>{JS_ENGINE}</script>"
+
 
 @dashboard_routes.get('/dashboard')
 async def dash(req):
@@ -480,8 +528,8 @@ async def dash(req):
         if not mp.get("premium"):
             return web.HTTPFound('/premium_expired')
 
-    body = CARD_CSS + SEARCH_ZONE + f"<script>{JS_ENGINE}</script>"
-    return build_page("Home - Fast Finder", body, "", "dash", role)
+    # Reusing the pre-compiled DASHBOARD_BODY
+    return build_page("Home - Fast Finder", DASHBOARD_BODY, "", "dash", role)
 
 
 @dashboard_routes.get('/logout')
@@ -515,3 +563,10 @@ async def premium_expired(req):
         '</div>'
     )
     return build_page("Premium Expired", form_wrapper("Premium Expired", content), "login-bg")
+
+
+# ✅ OPTIMIZATION 2: Koyeb Health Check Route
+# Essential for Koyeb deployments. It prevents the MicroVM from restarting.
+@dashboard_routes.get('/health')
+async def koyeb_health_check(req):
+    return web.json_response({"status": "alive", "platform": "koyeb"})
